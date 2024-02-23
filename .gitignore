@@ -1,0 +1,12 @@
+###keil output ###
+*.o
+*.crf
+*.d
+
+
+### user pr val ###
+
+*.ppt
+*.pptx
+*.doc
+*.docx
