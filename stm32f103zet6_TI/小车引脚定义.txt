@@ -1,0 +1,53 @@
+小车引脚定义											TIM1 PWM波输出
+
+左前编码器   TIM2 A:CH1->PA15 B:CH2->PB3   (部分重映射)		CH1->PE9
+左后编码器   TIM3 A:CH1->PB4  B:CH2->PB5   (部分重映射)		CH2->PE11 
+右前编码器	 TIM4 B:CH1->PB6  A:CH2->PB7					CH3->PE13
+右后编码器   TIM5 B:CH1->PA0  A:CH2->PA1					CH4->PE14
+
+TB6612 逻辑引脚定义
+左前轮 PIN1->PC0
+	   PIN2->PC1
+左后轮 PIN1->PC2
+	   PIN2->PC3
+右前轮 PIN1->PC4
+	   PIN2->PC5
+右后轮 PIN1->PC6
+       PIN2->PC7
+
+
+
+串口引脚定义
+USART1  TX->PA9  RX->PA10
+USART2  TX->PA2  RX->PA3
+USART3  TX->PB10 RX->PB11
+UART4   TX->PC10 RX->PC11
+UART5   TX->PC12 RX->PD2 
+
+
+灰度传感器引脚定义
+I2C1 I2C1_SCL->PB8 	I2C1_SDA->PB9  (重映射)
+
+
+
+
+
+硬件SPI引脚
+SPI1 SPI1_CS->PA4
+	 SPI1_SCK->PA5
+	 SPI1_MISO->PA6
+	 SPI1_MOSI->PA7
+
+SPI2 SPI2_CS->PB12
+	 SP2_SCK->PB13
+	 SP2_MISO->PB14
+	 SP2_MOSI->PB15
+	 
+
+
+OLED 软件I2C
+SCL->PD11
+SDA->PD12
+RES->PD13
+DC->PD14
+BLK->PD15
