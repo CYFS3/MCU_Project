@@ -1,0 +1,36 @@
+控制水闸：
+	topic:  control_sluice
+	json={
+		"waterId":""		//水闸Id，默认空，现只需要"Sluice-001"  *注意，有空格	
+		"state":-1		//状态，默认为-1，1为开启，0为关闭
+	}
+控制电闸:
+	topic:  control_switch
+	json={
+		"elecId":""		//电闸Id，默认空，现只需要"Elec-001"    *注意，没空格
+		"state":-1		//状态，默认为-1，1为开启，0为关闭
+	}
+ 
+
+
+
+
+
+
+//暂时不谈
+房间监测：
+	topic:  room_monitor
+	json={
+		"dormitoryId":          //宿舍Id
+		"temp":			//温度
+		"hum": 			//湿度
+	}
+
+门禁管理:
+	topic:   access_manager
+	json={
+		"name":		//姓名
+		"accessId":	//门禁设备Id，类似卡的编号
+		"createTime":	//刷卡时间
+		"machine":	//刷卡机编号	
+	}
