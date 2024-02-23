@@ -2,8 +2,9 @@
 *.o
 *.crf
 *.d
-
-
+*.axf
+*.hex
+*.dep
 ### user pr val ###
 
 *.ppt
