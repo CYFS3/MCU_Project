@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Car_BLE</string>
+    <string name="module_name">蓝牙名称:</string>
+    <string name="module_mac">物理地址:</string>
+</resources>

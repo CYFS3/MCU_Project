@@ -1,0 +1,149 @@
+#include "USART.h"
+
+
+/**
+  * @brief  USART1相关初始化函数
+  * @param  None
+  * @retval None
+  * @note   本例加了重映射
+  *
+  */
+void USARTInit(void) 
+{
+    //1.开启时钟GPIO、USART1、重映射要开启AFIO时钟
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA|RCC_APB2Periph_USART1,ENABLE);
+	//2.初始化GPIO
+    GPIO_InitTypeDef  GPIO_InitStructure;
+    GPIO_InitStructure.GPIO_Mode=GPIO_Mode_AF_PP;//推挽复用输出//外设GPIO口的工作方式，找110（参考手册的P110页）
+    GPIO_InitStructure.GPIO_Pin=GPIO_Pin_9;
+    GPIO_InitStructure.GPIO_Speed=GPIO_Speed_50MHz;
+    GPIO_Init(GPIOA,&GPIO_InitStructure);
+    GPIO_InitStructure.GPIO_Mode=GPIO_Mode_IPU;//上拉输入
+    GPIO_InitStructure.GPIO_Pin=GPIO_Pin_10;
+    GPIO_Init(GPIOA,&GPIO_InitStructure);
+
+    USART_InitTypeDef  USART_InitStructure;
+    USART_InitStructure.USART_BaudRate=USART1_BAUD;//波特率，通常1200的整数倍，9600,115200,57600
+    USART_InitStructure.USART_HardwareFlowControl=USART_HardwareFlowControl_None;//硬件流控，无
+    USART_InitStructure.USART_Mode=USART_Mode_Tx|USART_Mode_Rx;//工作方式：发送和接收
+    USART_InitStructure.USART_Parity=USART_Parity_No;//无校验
+    USART_InitStructure.USART_StopBits=USART_StopBits_1;//停止位
+    USART_InitStructure.USART_WordLength=USART_WordLength_8b;//数据位8位
+    USART_Init(USART1,&USART_InitStructure);
+
+	//4.中断NVIC配置//有要开中断接收或发送的时候才需要
+    NVIC_InitTypeDef  NVIC_InitStructure;
+    NVIC_InitStructure.NVIC_IRQChannel=USART1_IRQn;//中断通道号到stm32f10x.h里找IRQn
+    NVIC_InitStructure.NVIC_IRQChannelCmd=ENABLE;//中断使能
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=1;	//主优先级
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority=2;				//次优先级
+
+    NVIC_Init(&NVIC_InitStructure);
+	//开启串口1的接收中断
+    USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);
+
+
+	//5.使能串口
+    USART_Cmd(USART1,ENABLE);
+	//6.清除发送完成标志(TC)//防止丢失第一个发送的字符
+    USART_ClearFlag(USART1,USART_FLAG_TC);
+}
+
+//7.编写发送函数
+/**
+	* @brief  发送一个字节（字符）
+  * @param  USARTx：串口x
+	* @param  u8 ch：要发送的字节（字符）
+  * @retval None
+  * @note
+  */
+void USARTSendByte(USART_TypeDef* USARTx,u8 ch) 
+{
+    USART_SendData(USARTx,(u16)ch);//调用库函数发送一个字节数据
+    //等待该字节发送完成
+    //读取USART_FLAG_TC判断发送是否完成，RESET：未完成，SET：完成
+    while(USART_GetFlagStatus(USARTx,USART_FLAG_TC)==RESET) {;}
+}
+
+/**
+	* @brief  发送一个字符串
+  * @param  USARTx：串口x
+	* @param  u8 *str：要发送的字符串
+  * @retval None
+  * @note
+  */
+void USARTSendString(USART_TypeDef* USARTx,u8 *str) 
+{
+    u32 pos=0;//偏移量，指向字符串str的第pos个字符
+
+    while(*(str+pos)!='\0') 
+    { //*(str+pos)字符串str的第pos个字符
+        USARTSendByte(USARTx,*(str+pos));
+        pos++;
+    }
+
+}
+
+/**
+	* @brief  对基于fputc()的printf()系列函数的输出，重定向到USART1上去
+  * @param  int ch：要输出的字符
+	* @param  FILE *f：指向FILE结构的指针
+  * @retval ch ：返回要输出的字符
+  * @note 需要在config.h里添加#include "stdio.h",并且要在工程Target选项里勾选“Use MicroLIB”
+  */
+int fputc(int ch,FILE *f) {
+    //发送一个字节到串口
+    USART_SendData(USART1,(u16)ch);//调用库函数发送一个字节数据
+    //等待该字节发送完成
+    //读取USART_FLAG_TC判断发送是否完成，RESET：未完成，SET：完成
+    while(USART_GetFlagStatus(USART1,USART_FLAG_TC)==RESET) {;}
+    return ch;
+
+}
+
+//8.编写串口接收中断服务函数
+//函数名是固定的，到.s启动文件里找
+//都是无返回值、无参的
+
+u8 USART1_RxBUF[USART1_RXBUF_SIZE];//串口接收缓冲区（数组）
+u16 USART1_RecPos=0;//用于指向接收缓冲区的最后一个数据的位置
+
+/**
+	* @brief  串口1的中断服务函数
+  * @param  None
+  * @retval None
+  * @note   这是所有串口1的中断入口函数，进入本函数时，要判断中断标志位，看是哪种中断引起的
+  *         本次是处理串口接收中断，要检测 USART_IT_RXNE标志位
+  *         退出前，要清 USART_IT_RXNE标志位，否则会多次进此函数（重复接收数据）
+  */
+void USART1_IRQHandler(void) 
+{
+    if(USART_GetITStatus(USART1,USART_IT_RXNE)==SET) 
+    {
+        USART1RecTimer=USART1RecTimerPeriod;//重置接收间隔时间
+         USART1_RxBUF[USART1_RecPos++]=(u8)USART_ReceiveData(USART1);
+        USART_ClearITPendingBit(USART1,USART_IT_RXNE);
+    }
+}
+
+/**
+	* @brief  串口1的字符串处理函数，收到“Beep On”,蜂鸣器响；收到"Beep Off"，蜂鸣器停
+  * @param  None
+  * @retval BOOL TRUE 或 FALSE
+  * @note   要想使用strstr()、memset()要在config.h里#include "string.h"
+  *         BOOL 是我们自定义的布尔类型，在config.h里typedef enum {FALSE=0,TRUE=!FALSE} BOOL;
+  */
+unsigned char USART1_RecProsess(void) {
+    if(USART1RecTimer!=0)return false;//字符接收间隔不为0,字符串还没接收完，不处理。
+    if(USART1_RecPos==0)return false;//接收缓冲区是空，没有数据，不处理。
+    //字符串接收完成
+    USART1_RxBUF[USART1_RecPos]='\0';//给接收缓冲加一个字符串结束符
+    //利用* strstr(str1,str2)函数来判断接收缓冲里是否有指定指定的字符串命令
+		//清空接收缓冲区（内存空间）
+		
+    memset(USART1_RxBUF,0,USART1_RXBUF_SIZE);
+    USART1_RecPos=0;//接收缓冲区指针清零
+    return true;
+}
+
+
