@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "delay.h": "c",
+        "uart.h": "c",
+        "nvic.h": "c",
+        "oled.h": "c",
+        "stm32f10x.h": "c",
+        "adc.h": "c",
+        "stdlib.h": "c",
+        "iic.h": "c",
+        "font.h": "c",
+        "dht11.h": "c",
+        "network.h": "c",
+        "led.h": "c"
+    }
+}
